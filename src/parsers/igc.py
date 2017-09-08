@@ -386,3 +386,41 @@ class IGC(object):
         self._interp_pressure_altitude = None
         self._interp_gps_altitude = None
         self._is_interps_current = False
+
+    @property
+    def start_year(self):
+        """Get the year the flight started in
+
+        Returns:
+            year: the year that the flight started in, derived from the IGC
+                HFDTE entry
+        """
+        return self._date.year
+
+    @property
+    def start_month(self):
+        """Get the month the flight srated in
+
+        Returns:
+            month: the month the flight started in, reported by the HFDTE entry
+        """
+        return self._date.month
+
+    @property
+    def start_day(self):
+        """Get the day the flight started on
+
+        Returns:
+            day: the day the flight started on, reported by the HFDTE entry
+        """
+        return self._date.day
+
+    @property
+    def start_date(self):
+        """Get the datetime instance identifying the start date
+
+        Returns:
+            start: datetime entry specifying the start date reported by the
+                HFDTE entry in the igc file
+        """
+        return self._date
