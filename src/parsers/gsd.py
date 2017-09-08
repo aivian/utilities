@@ -90,7 +90,7 @@ class GSDParser(object):
         """
         now = datetime.datetime.now()
         if station is None:
-            station = '{}%%2C%20{}'.format(lat, lon)
+            station = '{}%2C%20{}'.format(lat, lon)
         if year is None:
             year = now.year
         if month is None:
@@ -103,7 +103,7 @@ class GSDParser(object):
         start = geodesy.conversions.datetime_to_unix(datetime.datetime(
             year, month, day, hour, 0, 0))
         end = geodesy.conversions.datetime_to_unix(datetime.datetime(
-            year, month, day, hour+1, 0, 0))
+            year, month, day, hour+1, 0, 0)) + 1
         url = 'https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=' +\
             model + \
             '&start_year=' + str(year) +\
@@ -155,7 +155,7 @@ class GSDParser(object):
         #bulk sounding info on the third line
         data = re.search(
             'CAPE\s+([0-9]+)\s+' +
-            'CIN\s+([0-9]+)\s+' +
+            'CIN\s+([-0-9]+)\s+' +
             'Helic\s+([0-9]+)\s+' +
             'PW\s+([0-9]+)', text[2]).groups()
         self.cape = int(data[0])
@@ -252,7 +252,7 @@ class GSDParser(object):
         Returns:
             no returns
         """
-        str_data = re.search('\s+(\w+)'*4, line).groups()
+        str_data = re.search('\s+([0-9a-zA-Z,-\.]+)'*4, line).groups()
         line_type = int(str_data[0])
         self.station_id = str_data[1]
         self.sonde_id = int(str_data[2])
@@ -282,7 +282,7 @@ class GSDParser(object):
         if numpy.any(numpy.array(data[1:]) == 99999):
             return
 
-        self._P.append(data[0])
+        self._P.append(data[0] * 10.0)
         self._h.append(data[1])
         self._T.append(data[2] / 10.0)
         self._Ts.append(data[3] / 10.0)
