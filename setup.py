@@ -8,4 +8,11 @@ setup(name='bird_utils',
     author='bird',
     author_email='jjbird@gmail.com',
     package_dir = {'': 'src'},
-    packages=['geodesy', 'geometry', 'meteorology', 'parsers'],)
+    packages=[
+        'environments',
+        'geodesy',
+        'geometry',
+        'meteorology',
+        'parsers',
+        'robot_control',
+        'simulation'],)
