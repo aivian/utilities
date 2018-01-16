@@ -151,6 +151,11 @@ class GSDParser(object):
             self._month_dict[data[3]],
             int(data[2]))
         self.hour = int(data[1])
+        timestamp = {
+            'year': int(data[4]),
+            'month': self._month_dict[data[3]],
+            'day': int(data[2]),
+            'hour': int(data[1])}
 
         #bulk sounding info on the third line
         data = re.search(
@@ -179,7 +184,7 @@ class GSDParser(object):
             'u': self._u,
             'v': self._v,
             }
-        sounding = meteorology.sounding.Sounding(sounding_data)
+        sounding = meteorology.sounding.Sounding(sounding_data, timestamp)
         return sounding
 
     def _parse_data_line(self, line):
