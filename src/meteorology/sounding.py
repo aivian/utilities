@@ -3,6 +3,9 @@ import pdb
 
 import numpy
 
+import datetime
+import geodesy.conversions
+
 class Sounding(object):
     """ A class to deal with sounding data
     """
@@ -27,6 +30,8 @@ class Sounding(object):
         self._theta = None
         self._theta_e = None
         self._theta_v = None
+
+        self._time = None
 
         if data is not None:
             self.from_dict(data)
@@ -58,6 +63,16 @@ class Sounding(object):
         self._u = numpy.array(data['u'])
         self._v = numpy.array(data['v'])
 
+        sounding_datetime = datetime.datetime(
+            data['year'],
+            data['month'],
+            data['day'],
+            data['hour'],
+            0,
+            0,
+            0)
+        self._time = geodesy.conversions.datetime_to_gps(sounding_datetime)
+
         #From:
         #http://andrew.rsmas.miami.edu/bmcnoldy/Humidity.html
         self._RH = 100.0 * (
@@ -81,12 +96,17 @@ class Sounding(object):
 
         self._compute_gradients()
 
-    def from_RAOB(self, data):
+    def from_RAOB(self, data, timestamp):
         """ Populate sounding data from an RAOB formatted data (ie the format
         that rucsoundings and UWyo give soundings in)
 
         Arguments:
             data: nx11 numpy array giving sounding data
+            timestamp: dict with fields
+                year
+                month
+                day
+                hour
 
         Returns:
             no returns
@@ -102,6 +122,16 @@ class Sounding(object):
         self._theta = data[:,8]
         self._theta_e = data[:,9]
         self._theta_v = data[:,10]
+
+        sounding_datetime = datetime.datetime(
+            timestamp['year'],
+            timestamp['month'],
+            timestamp['day'],
+            timestamp['hour'],
+            0,
+            0,
+            0)
+        self._time = geodesy.conversions.datetime_to_gps(sounding_datetime)
 
         self._compute_gradients()
 
@@ -125,6 +155,49 @@ class Sounding(object):
         self._d_theta = numpy.gradient(self._theta)
         self._d_theta_e = numpy.gradient(self._theta_e)
         self._d_theta_v = numpy.gradient(self._theta_v)
+
+    @property
+    def timestamp(self):
+        """Get a timestamp for this sounding
+
+        Arguments:
+            no arguments
+
+        Returns:
+            timestamp: integer giving yyyymmddhh in utc
+        """
+        time_datetime = geodesy.conversions.gps_to_datetime(self._time)
+        timestamp = (
+            time_datetime.year * 1000000 +
+            time_datetime.month * 10000 +
+            time_datetime.day * 100 +
+            imte_datetitme.hour)
+        return timestamp
+
+    @property
+    def time(self):
+        """Get the sounding time
+
+        Arguments
+            no arguments
+
+        Returns:
+            time: the time of the sounding as seconds since the GPS epoch
+        """
+        return self._time
+
+    @property
+    def hour(self):
+        """Get the sounding hour
+
+        Arguments:
+            no arguments
+
+        Returns:
+            hour: the UTC hour of this sounding
+        """
+        time_datetime = geodesy.conversions.gps_to_datetime(self._time)
+        return time_datetime.hour
 
     def P(self, z):
         """ Get the pressure at an altitude
