@@ -136,8 +136,11 @@ class ParkController(PathFollowingController):
         # that the acceleration is computed based on our desired look-ahead
         # not on the distance from the trajectory (or we might take forever
         # to turn toward it)
-        if numpy.linalg.norm(r) > self._L or from_current_location:
+        if numpy.linalg.norm(r) > self._L:
             traj_vector = geometry.conversions.to_unit_vector(r) * self._L
+        elif from_current_location:
+            traj_vector = (
+                geometry.conversions.to_unit_vector(vertex[1] - x) * self._L)
         else:
             # if we're projecting a segment then we simply need to know which
             # path segment we lie nearest.
@@ -298,9 +301,9 @@ class ParameterizedParkController(ParkController):
         Returns:
             a_cmd: an acceleration command.
         """
-        if params is None:
-            assert self._params is not None, "Parameters not set or passed in!"
-            params = self._params
+        #if params is None:
+        #    assert self._params is not None, "Parameters not set or passed in!"
+        #    params = self._params
 
         a_linearization = self._acceleration((self._X, self._V), params)
 
@@ -321,7 +324,7 @@ class ParameterizedParkController(ParkController):
             # if we're near enough to the path
             # TODO: why was r.dot(r) previously negative here?
             # my intuition is this should be: numpy.sqrt(r.dot(r) + self._L**2.0 - numpy.dot(r,L))
-            path_length = numpy.sqrt(r.dot(r) + self._L**2.0)
+            path_length = numpy.sqrt(r.dot(r.T) + self._L**2.0)
             traj_vector = r + tangent * path_length
 
         # park control law (note Vxtraj is same as V*sin(eta))
@@ -334,7 +337,8 @@ class ParameterizedParkController(ParkController):
 
 class CirclingParkController(ParameterizedParkController):
     """A parameterized path controller that is pre-built to do circles
-    """ def __init__(self, X0, R, L, direction=1, is_ned=True):
+    """
+    def __init__(self, X0, R, L, direction=1, is_ned=True):
         """Constructor
 
         Arguments:
@@ -392,7 +396,7 @@ class CirclingParkController(ParameterizedParkController):
 
         # now figure out where the circle would lie and compute a vector
         # traveling around it in the proper direction
-        path = dx - dx_hat * self._R
+        path = dx - dx_hat * self._R + self._X0
         # unit vector tangent to circle pointing in desired direction of motion
         k_hat = numpy.array([0, 0, 1.0])
         path_dot = numpy.cross(dx_hat, self._direction * k_hat)
@@ -446,7 +450,7 @@ class CirclingParkController(ParameterizedParkController):
         return self._R
 
     @R.setter
-    def R(self):
+    def R(self, R):
         """Setter for the circle radius
 
         Arguments:
