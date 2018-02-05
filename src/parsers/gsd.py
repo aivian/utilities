@@ -151,22 +151,17 @@ class GSDParser(object):
             self._month_dict[data[3]],
             int(data[2]))
         self.hour = int(data[1])
-        timestamp = {
-            'year': int(data[4]),
-            'month': self._month_dict[data[3]],
-            'day': int(data[2]),
-            'hour': int(data[1])}
 
         #bulk sounding info on the third line
-        data = re.search(
+        convective_data = re.search(
             'CAPE\s+([0-9]+)\s+' +
             'CIN\s+([-0-9]+)\s+' +
             'Helic\s+([0-9]+)\s+' +
             'PW\s+([0-9]+)', text[2]).groups()
-        self.cape = int(data[0])
-        self.cin = int(data[1])
-        self.helicity = int(data[2])
-        self.pw = int(data[3])
+        self.cape = int(convective_data[0])
+        self.cin = int(convective_data[1])
+        self.helicity = int(convective_data[2])
+        self.pw = int(convective_data[3])
 
         #From here on out every line should have an identifier so use that
         for line in text[3:]:
@@ -183,8 +178,12 @@ class GSDParser(object):
             'dew_point': self._Ts,
             'u': self._u,
             'v': self._v,
+            'year': int(data[4]),
+            'month': self._month_dict[data[3]],
+            'day': int(data[2]),
+            'hour': int(data[1]),
             }
-        sounding = meteorology.sounding.Sounding(sounding_data, timestamp)
+        sounding = meteorology.sounding.Sounding(sounding_data)
         return sounding
 
     def _parse_data_line(self, line):
