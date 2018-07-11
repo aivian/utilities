@@ -431,7 +431,7 @@ def gps_to_datetime(secs):
     if (isinstance(secs, numpy.ndarray) or
         isinstance(secs, list) or
         isinstance(secs, tuple)):
-        return tuple(s.gps_to_datetime for s in secs)
+        return tuple(gps_to_datetime(s) for s in secs)
 
     assert isinstance(secs, float), "gps time must be float seconds"
     ap_epoch = astropy.time.Time(secs, scale='tai', format='gps')
