@@ -148,6 +148,22 @@ class NMEA(object):
                 speed: ground speed (m/s)
                 course: course track (radians)
         """
+        def dm_to_sd(dm):
+            """Convert degrees / minutes to decimal degrees
+
+            Arguments:
+                dm: string containing degrees and decimal minutes
+                    concatenated togeter. Ex:
+                    "12319.943281" = 123 degrees, 19.953281 minutes)
+
+            Returns:
+                dd: decimal degrees (floating point)
+             """
+            if not dm or dm == '0':
+                return 0.
+            d, m = re.match(r'^(\d+)(\d\d\.\d+)$', dm).groups()
+            return float(d) + float(m) / 60
+
         data = string_data.split(',')
         if len(data) < 10:
             return None
@@ -164,8 +180,8 @@ class NMEA(object):
         second = float(data[1][4:])
         n_s = 2 * (data[4] == 'N') - 1
         e_w = 2 * (data[6] == 'E') - 1
-        latitude = numpy.deg2rad(float(data[3]) / 100.0 * n_s)
-        longitude = numpy.deg2rad(float(data[5]) / 100.0 * e_w)
+        latitude = numpy.deg2rad((dm_to_sd(data[3]))  * n_s)
+        longitude = numpy.deg2rad((dm_to_sd(data[5])) * e_w)
         speed = float(data[7]) * 0.5144 # knots to m/s
         course = numpy.deg2rad(float(data[8]))
 
