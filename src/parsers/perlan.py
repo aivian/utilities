@@ -105,7 +105,7 @@ class PerlanParser(parsers.nmea.NMEA):
         """
         data = re.split(',|\*', string_data)
 
-        if len(data) < 13:
+        if len(data) <= 13:
             return None
 
         v_ias = float(data[2]) * 1000.0 / 3600.0
