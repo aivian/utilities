@@ -183,7 +183,10 @@ class NMEA(object):
         latitude = numpy.deg2rad((dm_to_sd(data[3]))  * n_s)
         longitude = numpy.deg2rad((dm_to_sd(data[5])) * e_w)
         speed = float(data[7]) * 0.5144 # knots to m/s
-        course = numpy.deg2rad(float(data[8]))
+        if data[8] == '':
+            course = numpy.nan
+        else:
+            course = numpy.deg2rad(float(data[8]))
 
         time = geodesy.conversions.datetime_to_gps(
             datetime.datetime(
