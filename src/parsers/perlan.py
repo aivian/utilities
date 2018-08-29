@@ -86,6 +86,8 @@ class PerlanParser(parsers.nmea.NMEA):
         rmc_data = super(PerlanParser, self).parse_rmc(string_data, save)
         if rmc_data:
             self._latest_time = rmc_data[0]
+        else:
+            self._latest_time = None
 
     def parse_lxwp0(self, string_data, save=True):
         """Parse an lxnav LXWP0 message
