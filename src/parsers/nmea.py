@@ -373,4 +373,4 @@ class NMEA(object):
         for byte in packet_interior.groups()[0]:
             computed_checksum ^= ord(byte)
 
-        return hex(computed_checksum)[2:].upper() == reported_checksum
+        return hex(computed_checksum)[2:].upper() == reported_checksum.upper()

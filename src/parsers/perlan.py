@@ -109,6 +109,9 @@ class PerlanParser(parsers.nmea.NMEA):
 
         if len(data) <= 13:
             return None
+        if len(self._time_altitude) > 0:
+            if self._latest_time == self._time_altitude[-1]:
+                return None
 
         v_ias = float(data[2]) * 1000.0 / 3600.0
         h_baro = float(data[3])
