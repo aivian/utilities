@@ -39,19 +39,21 @@ class PerlanParser(parsers.nmea.NMEA):
 
         self._latest_time = None
 
-        self._time_altitude = []
+        self._time_lxwp0 = []
         self._baro_altitude = []
-        self._time_vias = []
         self._v_ias = []
-        self._time_edot = []
         self._edot = []
-        self._time_psi = []
         self._psi = []
-        self._time_wind = []
         self._wind = []
 
+        self._time_therm = []
+        self._OAT = []
+        self._therm_field_1 = []
+        self._therm_field_2 = []
+
         additional_parsers = {
-            'LXWP0': self.parse_lxwp0
+            'LXWP0': self.parse_lxwp0,
+            'therm': self.parse_therm,
             }
         self._sentence_parsers.update(additional_parsers)
 
@@ -73,7 +75,7 @@ class PerlanParser(parsers.nmea.NMEA):
         Returns:
             header: string with just the sentence id
         """
-        search_result = re.search('.+\:\$([A-Z0-9]+),', string_data)
+        search_result = re.search('.+\:\$([a-zA-Z0-9]+),', string_data)
         if not search_result:
             return
         return search_result.groups()[0]
@@ -109,8 +111,8 @@ class PerlanParser(parsers.nmea.NMEA):
 
         if len(data) <= 13:
             return None
-        if len(self._time_altitude) > 0:
-            if self._latest_time == self._time_altitude[-1]:
+        if len(self._time_lxwp0) > 0:
+            if self._latest_time == self._time_lxwp0[-1]:
                 return None
 
         v_ias = float(data[2]) * 1000.0 / 3600.0
@@ -136,17 +138,49 @@ class PerlanParser(parsers.nmea.NMEA):
         v_wind = -wind_M * numpy.cos(wind_psi)
 
         if save and self._latest_time is not None:
-            self._time_altitude.append(self._latest_time)
-            self._time_vias.append(self._latest_time)
-            self._time_edot.append(self._latest_time)
-            self._time_psi.append(self._latest_time)
-            self._time_wind.append(self._latest_time)
+            self._time_lxwp0.append(self._latest_time)
 
             self._baro_altitude.append(h_baro)
             self._v_ias.append(v_ias)
             self._edot.append(edot)
             self._psi.append(psi)
             self._wind.append(numpy.array([u_wind, v_wind]))
+
+    def parse_therm(self, string_data, save=True):
+        """Parse a perlan therm message
+
+        Arguments:
+            string_data: string with an LXWP0 message in it
+            save: save this data
+
+        Returns:
+            lxwp0_data: tuple containing lxwp0 data
+                v_ias: indicated airspeed (m/s)
+                h_baro: barometric altitude (m)
+                edot: vario reading (m/s)
+                psi: heading (rad)
+                u_wind: east wind component (m/s)
+                v_wind: north wind component (m/s)
+        """
+        data = re.split(',|\*', string_data)
+
+        if len(data) <= 3:
+            return None
+
+        if len(self._time_therm) > 0:
+            if self._latest_time == self._time_therm[-1]:
+                return None
+
+        OAT = float(data[1])
+        therm_field_1 = float(data[2])
+        therm_field_2 = float(data[3])
+
+        if save and self._latest_time is not None:
+            self._time_therm.append(self._latest_time)
+
+            self._OAT.append(OAT)
+            self._therm_field_1.append(therm_field_1)
+            self._therm_field_2.append(therm_field_2)
 
     def baro_altitude(self, time=None):
         """ Get barometric altitude at specified times
@@ -161,7 +195,7 @@ class PerlanParser(parsers.nmea.NMEA):
         """
         if time is None:
             return (
-                numpy.array(self._time_altitude),
+                numpy.array(self._time_lxwp0),
                 numpy.array(self._baro_altitude))
 
         if not self._is_interps_current:
@@ -182,7 +216,7 @@ class PerlanParser(parsers.nmea.NMEA):
         """
         if time is None:
             return (
-                numpy.array(self._time_vias),
+                numpy.array(self._time_lxwp0),
                 numpy.array(self._v_ias))
 
         if not self._is_interps_current:
@@ -203,7 +237,7 @@ class PerlanParser(parsers.nmea.NMEA):
         """
         if time is None:
             return (
-                numpy.array(self._time_edot),
+                numpy.array(self._time_lxwp0),
                 numpy.array(self._edot))
 
         if not self._is_interps_current:
@@ -224,7 +258,7 @@ class PerlanParser(parsers.nmea.NMEA):
         """
         if time is None:
             return (
-                numpy.array(self._time_psi),
+                numpy.array(self._time_lxwp0),
                 numpy.array(self._psi))
 
         if not self._is_interps_current:
@@ -245,13 +279,73 @@ class PerlanParser(parsers.nmea.NMEA):
         """
         if time is None:
             return (
-                numpy.array(self._time_wind),
+                numpy.array(self._time_lxwp0),
                 numpy.array(self._wind))
 
         if not self._is_interps_current:
             self._generate_interps()
 
         return (time, self._interp_wind(time))
+
+    def OAT(self, time=None):
+        """Get outside air temperature at specified times
+
+        Arguments:
+            time: optionally, the epochs of interest. if not specified all
+                epochs are returnd. time in GPS seconds
+
+        Returns:
+            OAT: outside air temperature at requested times
+        """
+        if time is None:
+            return (
+                numpy.array(self._time_therm),
+                numpy.array(self._OAT))
+
+        if not self._is_interps_current:
+            self._generate_interps()
+
+        return (time, self._interp_OAT(time))
+
+    def therm_field_1(self, time=None):
+        """Get therm message field 1
+
+        Arguments:
+            time: optionally, the epochs of interest. if not specified all
+                epochs are returnd. time in GPS seconds
+
+        Returns:
+            value: values of therm_field_1 at requested times
+        """
+        if time is None:
+            return (
+                numpy.array(self._time_therm),
+                numpy.array(self._therm_field_1))
+
+        if not self._is_interps_current:
+            self._generate_interps()
+
+        return (time, self._interp_therm_field_1(time))
+
+    def therm_field_2(self, time=None):
+        """Get therm message field 1
+
+        Arguments:
+            time: optionally, the epochs of interest. if not specified all
+                epochs are returnd. time in GPS seconds
+
+        Returns:
+            value: values of therm_field_2 at requested times
+        """
+        if time is None:
+            return (
+                numpy.array(self._time_therm),
+                numpy.array(self._therm_field_2))
+
+        if not self._is_interps_current:
+            self._generate_interps()
+
+        return (time, self._interp_therm_field_2(time))
 
     def clear_interp(self):
         """Clear interpolators so we can pickle
@@ -263,6 +357,10 @@ class PerlanParser(parsers.nmea.NMEA):
         self._interp_edot = None
         self._interp_psi = None
         self._interp_wind = None
+
+        self._interp_OAT = None
+        self._interp_therm_field_1 = None
+        self._interp_therm_field_2 = None
 
     def _generate_interps(self):
         """Generate interpolating functions
@@ -277,14 +375,23 @@ class PerlanParser(parsers.nmea.NMEA):
             time.sleep(0.001)
 
         self._interp_baro_altitude = scipy.interpolate.interp1d(
-            numpy.array(self._time_altitude), numpy.array(self._baro_altitude))
+            numpy.array(self._time_lxwp0),
+            numpy.array(self._baro_altitude))
         self._interp_v_ias = scipy.interpolate.interp1d(
-            numpy.array(self._time_vias), numpy.array(self._v_ias))
+            numpy.array(self._time_lxwp0), numpy.array(self._v_ias))
         self._interp_edot = scipy.interpolate.interp1d(
-            numpy.array(self._time_edot), numpy.array(self._edot))
+            numpy.array(self._time_lxwp0), numpy.array(self._edot))
         self._interp_psi = scipy.interpolate.interp1d(
-            numpy.array(self._time_psi), numpy.array(self._psi))
+            numpy.array(self._time_lxwp0), numpy.array(self._psi))
         self._interp_wind= scipy.interpolate.interp1d(
-            numpy.array(self._time_wind), numpy.array(self._wind), axis=0)
+            numpy.array(self._time_lxwp0), numpy.array(self._wind), axis=0)
+        self._interp_OAT= scipy.interpolate.interp1d(
+            numpy.array(self._time_therm), numpy.array(self._OAT), axis=0)
+        self._interp_therm_field_1 = scipy.interpolate.interp1d(
+            numpy.array(self._time_therm),
+            numpy.array(self._therm_field_1), axis=0)
+        self._interp_therm_field_2 = scipy.interpolate.interp1d(
+            numpy.array(self._time_therm),
+            numpy.array(self._therm_field_2), axis=0)
 
         super(PerlanParser, self)._generate_interps()
