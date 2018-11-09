@@ -129,7 +129,7 @@ class BufkitParser(object):
         """
         for field in self._station_fields:
             field_data = re.search(
-                '{} = ([A-Za-z0-9\.\-/]+) '.format(field), line)
+                '{} = ([A-Za-z0-9\.\-/]+) ?'.format(field), line)
             if field_data:
                 self._header_data[field] = self._process_header_field(
                     field, field_data.groups()[0])
