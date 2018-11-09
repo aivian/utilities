@@ -41,11 +41,11 @@ class Sounding(object):
 
         Arguments:
             data: a dictionary of data with fields:
-                P = None
-                z = None
-                T = None
-                dew_point = None
-                self._RH = None
+                P: pressure (Pa)
+                z: altitude (m)
+                T: tempeature (K)
+                dew_point: dew point (K)
+                self._RH: relative humidity (%)
                 self._mixing_ratio = None
                 self._wind_direction = None
                 self._wind_speed = None
@@ -58,8 +58,8 @@ class Sounding(object):
         """
         self._P = numpy.array(data['P'])
         self._z = numpy.array(data['z'])
-        self._T = numpy.array(data['T']) + 273.16
-        self._dew_point = numpy.array(data['dew_point']) + 273.16
+        self._T = numpy.array(data['T'])
+        self._dew_point = numpy.array(data['dew_point'])
         self._u = numpy.array(data['u'])
         self._v = numpy.array(data['v'])
 
